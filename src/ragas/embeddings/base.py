@@ -64,13 +64,14 @@ class BaseRagasEmbeddings(Embeddings, ABC):
         Embed multiple texts.
         """
         if is_async:
+            # Add async retry to the embed_documents method
             aembed_documents_with_retry = add_async_retry(
                 self.aembed_documents, self.run_config
             )
             return await aembed_documents_with_retry(texts)
         else:
             loop = asyncio.get_event_loop()
-            embed_documents_with_retry = add_retry(
+            embed_documents_with_retry = add_retry(# 这一步是为了在embed_documents方法上添加重试机制，embed_documents是一个异步方法
                 self.embed_documents, self.run_config
             )
             return await loop.run_in_executor(None, embed_documents_with_retry, texts)
@@ -78,6 +79,9 @@ class BaseRagasEmbeddings(Embeddings, ABC):
     @abstractmethod
     async def aembed_query(self, text: str) -> t.List[float]: ...
 
+    """
+    Embed a single query text.
+    """
     @abstractmethod
     async def aembed_documents(self, texts: t.List[str]) -> t.List[t.List[float]]: ...
 
@@ -289,9 +293,9 @@ class HuggingfaceEmbeddings(BaseRagasEmbeddings):
             self.model, CrossEncoder
         ), "Model is not of the type CrossEncoder"
 
-        predictions = self.model.predict(texts, **self.encode_kwargs)
+        predictions = self.model.predict(texts, **self.encode_kwargs) # 根据文本对的相似度，返回一个相似度的值
 
-        assert isinstance(predictions, Tensor)
+        assert isinstance(predictions, Tensor) #判断predictions是否是Tensor类型，tensor是pytorch中的张量
         return predictions.tolist()
 
 

@@ -22,13 +22,17 @@ class PromptMixin:
 
     name: str = ""
 
-    def _get_prompts(self) -> t.Dict[str, PydanticPrompt]:
+    def _get_prompts(self) -> t.Dict[str, PydanticPrompt]: # 以下划线开头的方法，在Python中通常表示它是一个内部/私有方法
         prompts = {}
-        for key, value in inspect.getmembers(self):
+        for key, value in inspect.getmembers(self): # inspect.getmembers() 函数返回对象的属性和方法的列表
             if isinstance(value, PydanticPrompt):
                 prompts.update({key: value})
         return prompts
 
+    """
+    get_prompts和_get_prompts方法的区别在于，get_prompts方法返回一个字典，字典的键是prompt的name，值是prompt对象
+    _get_prompts方法返回一个字典，字典的键是prompt对象的name，值是prompt对象
+    """
     def get_prompts(self) -> t.Dict[str, PydanticPrompt]:
         """
         Returns a dictionary of prompts for the class.

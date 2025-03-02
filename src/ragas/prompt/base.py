@@ -30,7 +30,7 @@ class BasePrompt(ABC):
         self.language = language
         self.original_hash = original_hash
 
-    def __repr__(self):
+    def __repr__(self): # 定义实例的字符串表示形式
         return f"{self.__class__.__name__}(name={self.name}, language={self.language})"
 
     @abstractmethod
@@ -44,6 +44,7 @@ class BasePrompt(ABC):
     ) -> t.Any:
         """
         Generate a single completion from the prompt.
+        从提示中生成一个单个的完成结果
         """
         pass
 
@@ -51,26 +52,32 @@ class BasePrompt(ABC):
     def generate_multiple(
         self,
         llm: BaseRagasLLM,
-        data: t.Any,
+        data: t.Any, # 任何类型
         n: int = 1,
-        temperature: t.Optional[float] = None,
+        temperature: t.Optional[float] = None, # 可以是浮点数，也可以是None
         stop: t.Optional[t.List[str]] = None,
         callbacks: Callbacks = [],
-    ) -> t.Any:
+    ) -> t.Any: # 返回值可以是任何类型
         """
         Generate multiple completions from the prompt.
         """
         pass
 
 
+"""
+返回字符串的哈希值
+"""
 class StringIO(BaseModel):
     text: str
 
-    def __hash__(self):
+    def __hash__(self): # 返回对象的哈希值
         return hash(self.text)
 
 
-class BoolIO(BaseModel):
+"""
+返回布尔值的哈希值
+"""
+class BoolIO(BaseModel): 
     value: bool
 
     def __hash__(self):
@@ -127,7 +134,7 @@ class StringPrompt(BasePrompt):
             The generated text.
         """
         llm_result = await llm.agenerate_text(
-            StringPromptValue(text=data),
+            StringPromptValue(text=data), 
             n=1,
             temperature=temperature,
             stop=stop,
@@ -146,5 +153,5 @@ class StringPrompt(BasePrompt):
     ) -> t.List[str]:
         return [
             await self.generate(llm, data, temperature, stop, callbacks)
-            for _ in range(n)
+            for _ in range(n) # 生成n个
         ]

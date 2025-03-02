@@ -45,6 +45,12 @@ def is_multiple_completion_supported(llm: BaseLanguageModel) -> bool:
     return False
 
 
+"""
+BaseRagasLLM is an abstract class that defines the interface for all Ragas LLMs.
+It provides two methods for generating text:
+- generate_text: for generating text synchronously
+- agenerate_text: for generating text asynchronously
+"""
 @dataclass
 class BaseRagasLLM(ABC):
     run_config: RunConfig = field(default_factory=RunConfig, repr=False)
@@ -62,7 +68,7 @@ class BaseRagasLLM(ABC):
 
     def get_temperature(self, n: int) -> float:
         """Return the temperature to use for completion based on n."""
-        return 0.3 if n > 1 else 1e-8
+        return 0.3 if n > 1 else 1e-8 #如果n大于1，返回0.3，否则返回1e-8
 
     def is_finished(self, response: LLMResult) -> bool:
         logger.warning(
@@ -154,7 +160,7 @@ class LangchainLLMWrapper(BaseRagasLLM):
         is_finished_list = []
         for g in response.flatten():
             resp = g.generations[0][0]
-            if resp.generation_info is not None:
+            if resp.generation_info is not None: #不为空时，解析generation_info
                 # generation_info is provided - so we parse that
                 finish_reason = resp.generation_info.get("finish_reason")
                 if finish_reason is not None:
@@ -171,7 +177,7 @@ class LangchainLLMWrapper(BaseRagasLLM):
             # if generation_info is empty, we parse the response_metadata
             # this is less reliable
 
-            elif (
+            elif ( #如果resp是ChatGeneration类型，且message不为空
                 isinstance(resp, ChatGeneration)
                 and t.cast(ChatGeneration, resp).message is not None
             ):
@@ -204,7 +210,7 @@ class LangchainLLMWrapper(BaseRagasLLM):
         old_temperature: float | None = None
         if temperature is None:
             temperature = self.get_temperature(n=n)
-        if hasattr(self.langchain_llm, "temperature"):
+        if hasattr(self.langchain_llm, "temperature"): #如果langchain_llm有temperature属性
             self.langchain_llm.temperature = temperature  # type: ignore
             old_temperature = temperature
 
@@ -217,7 +223,7 @@ class LangchainLLMWrapper(BaseRagasLLM):
             )
         else:
             result = self.langchain_llm.generate_prompt(
-                prompts=[prompt] * n,
+                prompts=[prompt] * n, #如果不支持多个completion，就复制n次prompt
                 stop=stop,
                 callbacks=callbacks,
             )
@@ -277,7 +283,7 @@ class LangchainLLMWrapper(BaseRagasLLM):
         self.run_config = run_config
 
         # configure if using OpenAI API
-        if isinstance(self.langchain_llm, BaseOpenAI) or isinstance(
+        if isinstance(self.langchain_llm, BaseOpenAI) or isinstance(#如果langchain_llm是BaseOpenAI或ChatOpenAI
             self.langchain_llm, ChatOpenAI
         ):
             try:
@@ -316,6 +322,11 @@ class LlamaIndexLLMWrapper(BaseRagasLLM):
             run_config = RunConfig()
         self.set_run_config(run_config)
 
+    """
+    check_args is a helper function that logs warnings for unsupported kwargs
+    and returns a dictionary of kwargs that are supported by the LlamaIndex LLMs
+    这个函数使得不同的llm可以使用不同的参数
+    """
     def check_args(
         self,
         n: int,
@@ -333,7 +344,7 @@ class LlamaIndexLLMWrapper(BaseRagasLLM):
             logger.info(
                 "callbacks not supported for LlamaIndex LLMs, ignoring callbacks"
             )
-        if self._signature in ["anthropic", "bedrock"]:
+        if self._signature in ["anthropic", "bedrock"]: #anthropic和bedrock是llm的名字
             return {"temperature": temperature}
         else:
             return {
@@ -353,7 +364,7 @@ class LlamaIndexLLMWrapper(BaseRagasLLM):
         stop: t.Optional[t.List[str]] = None,
         callbacks: Callbacks = None,
     ) -> LLMResult:
-        kwargs = self.check_args(n, temperature, stop, callbacks)
+        kwargs = self.check_args(n, temperature, stop, callbacks) # kwargs存储了
         li_response = self.llm.complete(prompt.to_string(), **kwargs)
 
         return LLMResult(generations=[[Generation(text=li_response.text)]])

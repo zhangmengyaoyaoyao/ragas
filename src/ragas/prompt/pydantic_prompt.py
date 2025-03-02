@@ -31,6 +31,11 @@ InputModel = t.TypeVar("InputModel", bound=BaseModel)
 OutputModel = t.TypeVar("OutputModel", bound=BaseModel)
 
 
+"""
+PydanticPrompt 是一个通用类，可用于使用 Pydantic 模型定义输入和输出数据的提示。
+Pydantic Models 用于定义输入和输出数据的模式。
+该类提供使用语言模型生成输出并处理输入和输出数据的方法。
+"""
 class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
     # these are class attributes
     input_model: t.Type[InputModel]
@@ -41,6 +46,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
     def _generate_instruction(self) -> str:
         return self.instruction
 
+    """
+    _generate_output_signature 方法用于生成输出签名
+    """
     def _generate_output_signature(self, indent: int = 4) -> str:
         return (
             f"Please return the output in a JSON format that complies with the "
@@ -50,10 +58,13 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
             "properly escaped with a backslash."
         )
 
+    """
+    _generate_examples 方法用于生成示例，根据 examples 属性生成few_shot提示词中的示例部分
+    """
     def _generate_examples(self):
         if self.examples:
             example_strings = []
-            for idx, e in enumerate(self.examples):
+            for idx, e in enumerate(self.examples): # enumerate的作用是返回一个迭代器，从而获取到元素的索引值
                 input_data, output_data = e
                 example_strings.append(
                     f"Example {idx + 1}\n"
@@ -69,6 +80,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
         else:
             return ""
 
+    """
+    to_string 方法用于生成提示的字符串表示形式
+    """
     def to_string(self, data: t.Optional[InputModel] = None) -> str:
         return (
             f"{self.instruction}\n"
@@ -223,6 +237,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
     def process_output(self, output: OutputModel, input: InputModel) -> OutputModel:
         return output
 
+    """
+    adapt 方法用于将提示适应到新的语言
+    """
     async def adapt(
         self, target_language: str, llm: BaseRagasLLM, adapt_instruction: bool = False
     ) -> "PydanticPrompt[InputModel, OutputModel]":
@@ -259,9 +276,15 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
 
         return new_prompt
 
+    """
+    __repr__ 方法用于定义实例的字符串表示形式
+    """
     def __repr__(self):
         return f"{self.__class__.__name__}(instruction={self.instruction}, examples={self.examples}, language={self.language})"
 
+    """
+    __str__ 方法用于定义实例的字符串表示形式
+    """
     def __str__(self):
         json_str = json.dumps(
             {
@@ -277,6 +300,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
         )[1:-1]
         return f"{self.__class__.__name__}({json_str})"
 
+    """
+    __hash__ 方法用于返回对象的哈希值
+    """
     def __hash__(self):
         # convert examples to json string for hashing
         examples = []
@@ -302,6 +328,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
         # return the integer value of the hash
         return int(hasher.hexdigest(), 16)
 
+    """
+    __eq__ 方法用于判断两个对象是否相等
+    """
     def __eq__(self, other):
         if not isinstance(other, PydanticPrompt):
             return False
@@ -336,6 +365,9 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
             json.dump(data, f, indent=2, ensure_ascii=False)
             print(f"Prompt saved to {file_path}")
 
+    """
+    load 方法用于从文件中加载提示
+    """
     @classmethod
     def load(cls, file_path: str) -> "PydanticPrompt[InputModel, OutputModel]":
         with open(file_path, "r", encoding="utf-8") as f:
@@ -388,6 +420,9 @@ class FixOutputFormat(PydanticPrompt[OutputStringAndPrompt, StringIO]):
 fix_output_format_prompt = FixOutputFormat()
 
 
+"""
+RagasOutputParser 是一个用于解析 Ragas 生成的输出的类
+"""
 class RagasOutputParser(PydanticOutputParser[OutputModel]):
     async def parse_output_string(
         self,
@@ -399,7 +434,7 @@ class RagasOutputParser(PydanticOutputParser[OutputModel]):
     ) -> OutputModel:
         callbacks = callbacks or []
         try:
-            jsonstr = extract_json(output_string)
+            jsonstr = extract_json(output_string) 
             result = super().parse(jsonstr)
         except OutputParserException:
             if retries_left != 0:

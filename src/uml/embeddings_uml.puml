@@ -1,0 +1,70 @@
+@startuml EmbeddingsModule
+
+    class BaseRagasEmbeddings {
+        +run_config: RunConfig
+        +cache: t.Optional[CacheInterface]
+
+        {async} embed_text(self, text, is_async): t.List[float]
+        {async} embed_texts(self, texts, is_async): t.List[t.List[float]]
+        {abstractmethod} {async} aembed_query(self, text): t.List[float]
+        {abstractmethos} {async} aembed_documents(self, texts): t.List[t.List[float]]
+        +set_run_config(self, run_config: RunConfig): None
+        {classmethod} __get_pydantic_core_schema__(cls, source_type, handler): CoreSchema
+    }
+
+    class LangchainEmbeddingsWrapper {
+        +embedings: Embeddings
+        +run_config: RunConfig
+        +cache: t.Optional[CacheInterface]
+
+        +aembed_query(self, text): t.List[float]
+        +aembed_documents(self, texts): t.List[t.List[float]]
+        {async} aembed_query(self, text): t.List[float]
+        {async} aembed_documents(self, texts): t.List[t.List[float]]
+        +set_run_config(self, run_config: RunConfig): None
+    }
+
+    class HuggingfaceEmbeddings {
+        +model_name: str
+        +cache_folder: t.Optional[str]
+        +model_kwargs: t.Dict[str, t.Any]
+        +encode_kwargs: t.Dict[str, t.Any]
+        +cache: t.Optional[CacheInterface]
+
+        +embed_query(self, text): t.List[float]
+        +embed_documents(self, texts): t.List[t.List[float]]
+        +predict(self, texts): t.List[t.List[float]]
+    }
+
+    class LlamaIndexEmbeddingsWrapper {
+        +embedings: Embeddings
+        +run_config: RunConfig
+        +cache: t.Optional[CacheInterface]
+
+        +embed_query(self, text): t.List[float]
+        +embed_documents(self, texts): t.List[t.List[float]]
+        {async} aembed_query(self, text): t.List[float]
+        {async} aembed_documents(self, texts): t.List[t.List[float]]
+    }
+
+    class HaystackEmbeddingsWrapper {
+        +embedings: Embeddings
+        +run_config: RunConfig
+        +cache: t.Optional[CacheInterface]
+
+        +embed_query(self, text): t.List[float]
+        +embed_documents(self, texts): t.List[t.List[float]]
+        {async} aembed_query(self, text): t.List[float]
+        {async} aembed_documents(self, texts): t.List[t.List[float]]
+    }
+
+
+    BaseRagasEmbeddings <|-- LangchainEmbeddingsWrapper
+
+    BaseRagasEmbeddings <|-- HuggingfaceEmbeddings
+
+    BaseRagasEmbeddings <|-- LlamaIndexEmbeddingsWrapper
+
+    BaseRagasEmbeddings <|-- HaystackEmbeddingsWrapper
+
+@enduml

@@ -139,6 +139,7 @@ class ImageTextPrompt(PydanticPrompt, t.Generic[InputModel, OutputModel]):
         return output_models
 
 
+
 class ImageTextPromptValue(PromptValue):
     items: t.List[str]
 

@@ -1,0 +1,66 @@
+@startuml PromptModule
+    class BasePrompt {
+        {abstract} generate(): t.Any
+        {abstract} generate_multiple(): t.Any
+    }
+
+    class StringPrompt {
+        +generate(self, llm, data, temperature, stop, callbacks): str
+        +generate_multiple(self, llm, data, n, temperature, stop, callbacks): t.List[str]
+    }
+
+    class PydanticPrompt {
+        +input_model: Type[InputModel]
+        +output_model: Type[OutputModel]
+        +instruction: str
+        +examples: List[Tuple[InputModel, OutputModel]] = []
+
+        +to_string(self, data: t.Optional[InputModel] = None): str
+        +generate(self, llm, data, temperature, stop, callbacks, retries_left): OutputModel
+        +generate_multiple(self, llm, data, temperature, stop, callbacks, retries_left): t.List[OutputModel]
+        +adapt(self, target_language, llm, adapt_instruction): "PydanticPrompt[InputModel, OutputModel]"
+        +save(self, file_path): None
+        {classmethod} load(cls, file_path): "PydanticPrompt[InputModel, OutputModel]"
+    }
+
+    class ExampleStore {
+        +get_examples(self, data, top_k): t.Sequence[t.Tuple[BaseModel, BaseModel]]
+        +add_example(self, input, output): None
+    }
+
+    class InMemoryExampleStore {
+        +embeddings: BaseRagasEmbeddings
+        +add_example(self, input, output): None
+        +get_examples(self, data, top_k, threshold): t.Sequence[t.Tuple[BaseModel, BaseModel]]
+        {staticmethod} get_nearest_examples(query_embeddings, embeddings, top_k, threshold): t.List[int]
+    }
+
+    class FewShotPydanticPrompt {
+        +example_store: ExampleStore
+        +top_k_for_examples: int
+        +threshold_for_examples: float
+        +add_example(self, input, output): None
+        +generate_multiple(self, llm, data, temperature, stop, callbacks, retries_left): t.List[OutputModel]
+        +from_pydantic_prompt(cls, pydantic_prompt, embeddings): FewShotPydanticPrompt[InputModel, OutputModel]
+    }
+
+    
+    BaseModel <|-- InputModel
+    BaseModel <|-- OutputModel
+    BasePrompt <|-- StringPrompt
+
+    BasePrompt <|-- PydanticPrompt
+    "Generic<InputModel, OutputModel>" <|.. PydanticPrompt
+    PydanticPrompt o-- InputModel
+    PydanticPrompt o-- OutputModel
+
+    ExampleStore <|-- InMemoryExampleStore
+    InMemoryExampleStore --> BaseModel
+
+    PydanticPrompt <|-- FewShotPydanticPrompt
+    "Generic<InputModel, OutputModel>" <|.. FewShotPydanticPrompt
+    FewShotPydanticPrompt --> ExampleStore
+    FewShotPydanticPrompt --> InMemoryExampleStore
+    
+
+@enduml

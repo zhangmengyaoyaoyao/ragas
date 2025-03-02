@@ -1,0 +1,43 @@
+@startuml PromptModule
+    class BaseRagasLLM {
+        +run_config: RunConfig
+        +multiple_completion_supported: bool
+        +cache: t.Optional[CacheInterface]
+
+        +set_run_config(self, run_config: RunConfig): None
+        +get_temperature(self, n): float
+        +is_finished(self, response): bool
+        {abstractmethod} generate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        {abstractmethod} agenerate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        +generate(self, prompt, n, temperature, stop, callbacks): LLMResult
+    }
+    
+    class LangchainLLMWrapper {
+        +is_finished(self, response): bool
+        +generate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        +{async} agenerate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        +set_run_config(self, run_config: RunConfig): None
+    }
+
+    class LlamaIndexLLMWrapper {
+        +check_args(self, n, temperature, stop, callbacks): dict[str, t.Any]
+        +is_finished(self, response): bool
+        +generate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        +{async} agenerate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+    }
+
+    class HaystackLLMWrapper {
+        +is_finished(self, response): bool
+        +generate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+        +{async} agenerate_text(self, prompt, n, temperature, stop, callbacks): LLMResult
+    }
+
+
+    BaseRagasLLM <|-- LangchainLLMWrapper
+
+    BaseRagasLLM <|-- LlamaIndexLLMWrapper
+
+    BaseRagasLLM <|-- HaystackLLMWrapper
+
+
+@enduml
